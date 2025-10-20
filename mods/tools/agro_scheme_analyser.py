@@ -16,7 +16,7 @@ from mods.schemes import SchemeDocument, initialize_mock_schemes
 load_dotenv()
 
 
-class GovtSchemeDB:
+class AgroSchemeAnalyserTool:
     def __init__(self):
         try:
 
@@ -254,11 +254,18 @@ class GovtSchemeDB:
 
 
 if __name__ == "__main__":
-    db = GovtSchemeDB()
-    mock_schemes = initialize_mock_schemes()
-    db.build_index(mock_schemes)
-    db.close()
+    db = AgroSchemeAnalyserTool()
+    # mock_schemes = initialize_mock_schemes()
+    # db.build_index(mock_schemes)
+    # db.close()
     # print(f"✅ Loaded {len(mock_schemes)} government schemes")
+
+    # Usage
+    results = db.search_schemes("I wanna get a loan to buy agricultural equipment", top_k=5)
+    for r in results:
+        print(f"{r['title']} - Distance: {r['distance']:.3f} - Description: {r['description'][:100]}...")
+
+    db.close()
 
 
     

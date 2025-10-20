@@ -1,15 +1,14 @@
 import base64
 import os
-from typing import Dict, Optional, List
-from pathlib import Path
+from typing import Dict, List, Optional
+
+from dotenv import load_dotenv
 from openai import OpenAI
 from PIL import Image
-import io
-from dotenv import load_dotenv
 
 load_dotenv()
 
-class CropDiseaseDiagnosisTool:
+class AgroDiseaseAnalyserTool:
     """
     Tool for diagnosing crop diseases from images using GPT-4 Vision.
     Provides treatment recommendations with focus on locally available remedies.
@@ -254,7 +253,7 @@ if __name__ == "__main__":
     print("⚠️ Replace image paths with actual crop images\n")
     
 
-    tool = CropDiseaseDiagnosisTool()
+    tool = AgroDiseaseAnalyserTool()
     # test_image = "potato blight.jpg"
     # test_image = "wheat leaf rust nice_1.jpg"
     # test_image = "mango-scab-mango-1557912424.jpg"
