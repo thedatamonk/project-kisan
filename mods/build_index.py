@@ -170,29 +170,48 @@ class GovtSchemeDB:
     def close(self):
         self.db_client.close()
 
-    def search_schemes(self, query, state_filter=None, top_k=5):
-        """Search schemes with vector similarity"""
+    def rewrite_query(self, query: str) -> List[str]:
+        """Expand vague user query into better search queries"""
+        try:
+            prompt = f"""You are helping a farmer search for government agricultural schemes in India.
+            
+    The user asked: "{query}"
+
+    Generate 2-3 focused search queries that would help find relevant schemes. Consider:
+    - Specific scheme categories (loans, subsidies, insurance, etc.)
+    - Key benefits the user is looking for
+    - Related agricultural topics
+
+    Return only the search queries, one per line."""
+
+            response = self.llm_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3
+            )
+
+            expanded_queries = response.choices[0].message.content.strip().split('\n')
+            return [q.strip('- ').strip().strip('"') for q in expanded_queries if q.strip()]
+
+        except Exception as e:
+            print(f"Error rewriting query:{e}")
+            print ("Falling back to original query.")
+            return [query]  # Fallback to original query
         
+
+    def query_db(self, query: str, top_k: int):
         collection = self.db_client.collections.get(self.schema_name)
         
         # Get query embedding
         query_embedding = self.get_embedding(query)
         
-        # Build query
-        if state_filter:
-            response = collection.query.near_vector(
-                near_vector=query_embedding,
-                limit=top_k,
-                return_metadata=wvc.query.MetadataQuery(distance=True),
-                filters=wvc.query.Filter.by_property("state").equal(state_filter)
-            )
-        else:
-            response = collection.query.near_vector(
-                near_vector=query_embedding,
-                limit=top_k,
-                return_metadata=wvc.query.MetadataQuery(distance=True)
-            )
         
+        response = collection.query.near_vector(
+            near_vector=query_embedding,
+            limit=top_k,
+            return_metadata=wvc.query.MetadataQuery(distance=True)
+        )
+    
         # Extract results
         results = []
         for obj in response.objects:
@@ -212,6 +231,25 @@ class GovtSchemeDB:
             })
         
         return results
+
+
+    def search_schemes(self, query, top_k=2):
+        """Search schemes with vector similarity"""
+
+        print (f"Attempting to rewrite query: {query}")
+        search_queries = self.rewrite_query(query)
+
+        # Search with all expanded queries
+        all_results = []
+        for subquery in search_queries:
+            results = self.query_db(subquery, top_k=3)
+            all_results.extend(results)
+        
+        # Deduplicate and return top results
+        unique_results = {r['scheme_id']: r for r in all_results}.values()
+
+        # Return results sorted by distance
+        return sorted(unique_results, key=lambda x: x['distance'])[:top_k]
 
 
 

@@ -4,7 +4,7 @@ if __name__ == "__main__":
     db = GovtSchemeDB()
 
     # Usage
-    results = db.search_schemes("crop insurance Karnataka", top_k=3)
+    results = db.search_schemes("I wanna get a loan to buy agricultural equipment", top_k=5)
     for r in results:
         print(f"{r['title']} - Distance: {r['distance']:.3f} - Description: {r['description'][:100]}...")
 
