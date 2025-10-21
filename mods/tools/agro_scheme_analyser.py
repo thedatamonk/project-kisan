@@ -3,13 +3,16 @@ This is where we're gonna ingest all government scheme documents
 chunk them, create embeddings and store them in a vector database weaviate
 """
 
+import inspect
 import os
-from typing import List
+from typing import Dict, List
 
 import weaviate
 import weaviate.classes as wvc
 from dotenv import load_dotenv
 from openai import OpenAI
+from tools.tool_schema import tool_schema
+from tools.types import ToolResponse
 
 from mods.schemes import SchemeDocument, initialize_mock_schemes
 
@@ -232,8 +235,12 @@ class AgroSchemeAnalyserTool:
         
         return results
 
-
-    def search_schemes(self, query, top_k=2):
+    @tool_schema(
+        description="Search for government agricultural schemes based on user query",
+        query_description="User's search query about agricultural schemes",
+        top_k_description="Number of top relevant schemes to return"
+    )
+    def search_schemes(self, query, top_k=2) -> ToolResponse:
         """Search schemes with vector similarity"""
 
         print (f"Attempting to rewrite query: {query}")
@@ -249,8 +256,45 @@ class AgroSchemeAnalyserTool:
         unique_results = {r['scheme_id']: r for r in all_results}.values()
 
         # Return results sorted by distance
-        return sorted(unique_results, key=lambda x: x['distance'])[:top_k]
+        return {"retrieved_docs": sorted(unique_results, key=lambda x: x['distance'])[:top_k]}
 
+    @classmethod
+    def get_tool_definitions(cls) -> List[Dict]:
+        """
+        Extract all decorated methods and return their OpenAI function schemas.
+        
+        Returns:
+            List of tool definitions in OpenAI function calling format
+        """
+        definitions = []
+        
+        # Iterate through class methods
+        for name, method in inspect.getmembers(cls, predicate=inspect.isfunction):
+            # Check if method has our schema decorator
+            if hasattr(method, '__tool_schema__'):
+                schema = method.__tool_schema__
+                definitions.append({
+                    "type": "function",
+                    "function": schema
+                })
+        
+        return definitions
+    
+    @classmethod
+    def get_method_names(cls) -> List[str]:
+        """
+        Get list of all decorated method names.
+        
+        Returns:
+            List of method names that have tool_schema decorator
+        """
+        method_names = []
+        
+        for name, method in inspect.getmembers(cls, predicate=inspect.isfunction):
+            if hasattr(method, '__tool_schema__'):
+                method_names.append(name)
+        
+        return method_names
 
 
 if __name__ == "__main__":
@@ -262,7 +306,7 @@ if __name__ == "__main__":
 
     # Usage
     results = db.search_schemes("I wanna get a loan to buy agricultural equipment", top_k=5)
-    for r in results:
+    for r in results["retrieved_docs"]:
         print(f"{r['title']} - Distance: {r['distance']:.3f} - Description: {r['description'][:100]}...")
 
     db.close()

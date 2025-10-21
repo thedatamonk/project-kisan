@@ -1,10 +1,13 @@
 import base64
+import inspect
 import os
+from tools.types import ToolResponse
 from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
 from openai import OpenAI
 from PIL import Image
+from tools.tool_schema import tool_schema
 
 load_dotenv()
 
@@ -179,7 +182,12 @@ Focus on treatments available in Indian rural markets (local pesticide shops, or
                 "status": "failed"
             }
 
-    def get_quick_diagnosis(self, image_path: str, additional_context: Optional[str] = None) -> str:
+    @tool_schema(
+        description="Get a quick, concise diagnosis summary from a crop image",
+        image_path_description="Path to the crop image file",
+        additional_context_description="Additional context for diagnosis (optional)"
+    )
+    def get_quick_diagnosis(self, image_path: str, additional_context: Optional[str] = None) -> ToolResponse:
         """
         Get a quick, concise diagnosis (text summary)
         
@@ -218,13 +226,20 @@ RECOMMENDED TREATMENTS:
             summary += f"\n   Application: {treatment.get('application', 'N/A')}"
             summary += f"\n   Cost: ₹{treatment.get('cost_estimate', 'N/A')}"
         
-        return summary
+        return {"diagnosis": [{
+            "image_path": image_path,
+            "summary": summary
+        }]}
     
     def _format_list(self, items: List[str]) -> str:
         """Helper to format list items"""
         return "\n".join([f"• {item}" for item in items])
     
-    def batch_diagnose(self, image_paths: List[str]) -> List[Dict]:
+    @tool_schema(
+        description="Diagnose multiple crop images in batch",
+        image_paths_description="List of paths to crop image files"
+    )
+    def batch_diagnose(self, image_paths: List[str]) -> ToolResponse:
         """
         Diagnose multiple images in batch
         
@@ -240,9 +255,47 @@ RECOMMENDED TREATMENTS:
             result = self.diagnose(image_path)
             results.append({
                 "image_path": image_path,
-                "diagnosis": result
+                "summary": result
             })
-        return results
+        return {"diagnosis": results}
+    
+    @classmethod
+    def get_tool_definitions(cls) -> List[Dict]:
+        """
+        Extract all decorated methods and return their OpenAI function schemas.
+        
+        Returns:
+            List of tool definitions in OpenAI function calling format
+        """
+        definitions = []
+        
+        # Iterate through class methods
+        for name, method in inspect.getmembers(cls, predicate=inspect.isfunction):
+            # Check if method has our schema decorator
+            if hasattr(method, '__tool_schema__'):
+                schema = method.__tool_schema__
+                definitions.append({
+                    "type": "function",
+                    "function": schema
+                })
+        
+        return definitions
+    
+    @classmethod
+    def get_method_names(cls) -> List[str]:
+        """
+        Get list of all decorated method names.
+        
+        Returns:
+            List of method names that have tool_schema decorator
+        """
+        method_names = []
+        
+        for name, method in inspect.getmembers(cls, predicate=inspect.isfunction):
+            if hasattr(method, '__tool_schema__'):
+                method_names.append(name)
+        
+        return method_names
 
 
 if __name__ == "__main__":
@@ -261,4 +314,4 @@ if __name__ == "__main__":
     # summary = tool.get_quick_diagnosis(test_image, additional_context="Is this wheat leaf rust or another disease?")
     summary = tool.get_quick_diagnosis(test_image)
 
-    print (summary)
+    print (summary)    print (summary)
