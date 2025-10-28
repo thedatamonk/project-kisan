@@ -218,7 +218,7 @@ Remember: You're here to make farming easier and more profitable. Be their trust
             error_msg = f"Invalid parameters for {tool_name}: {str(e)}"
             raise Exception(error_msg)
     
-    def chat(self, user_message: str, image_path: Optional[str] = None) -> str:
+    def chat(self, user_message: str, image_path: Optional[str] = None) -> dict[str, Any]:
         """
         Main chat interface for text-based interaction
         
@@ -343,7 +343,7 @@ Remember: You're here to make farming easier and more profitable. Be their trust
                 "content": final_message
             })
             
-            return final_message
+            return {"role": "KisanAgent", "content": final_message}
         
         else:
             # No tools needed - direct response
