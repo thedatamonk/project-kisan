@@ -235,10 +235,10 @@ RECOMMENDED TREATMENTS:
         """Helper to format list items"""
         return "\n".join([f"• {item}" for item in items])
     
-    @tool_schema(
-        description="Diagnose multiple crop images in batch",
-        image_paths_description="List of paths to crop image files"
-    )
+    # @tool_schema(
+    #     description="Diagnose multiple crop images in batch",
+    #     image_paths_description="List of paths to crop image files"
+    # )
     def batch_diagnose(self, image_paths: List[str]) -> ToolResponse:
         """
         Diagnose multiple images in batch
