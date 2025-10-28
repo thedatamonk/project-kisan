@@ -23,7 +23,33 @@ class AgroSchemeAnalyserTool:
     def __init__(self):
         try:
 
-            self.db_client = weaviate.connect_to_local(host="localhost", port=8080)
+            # Check if we should use remote Weaviate (ngrok or cloud)
+            weaviate_url = os.getenv("WEAVIATE_URL")
+            
+            if weaviate_url:
+                # Remote connection (ngrok or Weaviate Cloud)
+                print(f"Connecting to remote Weaviate at {weaviate_url}")
+
+                # Parse the URL to get host and check if it's secure
+                from urllib.parse import urlparse
+                parsed = urlparse(weaviate_url)
+                host = parsed.netloc or parsed.path  # handles both http://host and just host
+                is_secure = parsed.scheme == "https" or ".ngrok" in host
+                
+                self.db_client = weaviate.connect_to_custom(
+                    http_host=host,
+                    http_port=443 if is_secure else 80,
+                    http_secure=is_secure,
+                    grpc_host=host,
+                    grpc_port=50051,
+                    grpc_secure=is_secure,
+                    skip_init_checks=True
+                )
+            else:
+                # Local connection (default for development)
+                print("Connecting to local Weaviate at localhost:8080")
+                self.db_client = weaviate.connect_to_local(host="localhost", port=8080)
+            
             self.embedding_model = "text-embedding-3-small"
             self.llm_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
