@@ -1,13 +1,13 @@
 import base64
 import inspect
 import os
-from tools.types import ToolResponse
+from mods.tools.tool_types import ToolResponse
 from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
 from openai import OpenAI
 from PIL import Image
-from tools.tool_schema import tool_schema
+from mods.tools.tool_schema import tool_schema
 
 load_dotenv()
 
@@ -310,8 +310,8 @@ if __name__ == "__main__":
     # test_image = "potato blight.jpg"
     # test_image = "wheat leaf rust nice_1.jpg"
     # test_image = "mango-scab-mango-1557912424.jpg"
-    test_image = "brinjal-leaf-spot.jpg"
+    test_image = "./assets/crop_diseases/brinjal-leaf-spot.jpg"
     # summary = tool.get_quick_diagnosis(test_image, additional_context="Is this wheat leaf rust or another disease?")
     summary = tool.get_quick_diagnosis(test_image)
 
-    print (summary)    print (summary)
+    print (summary)
