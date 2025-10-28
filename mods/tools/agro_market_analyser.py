@@ -1,8 +1,10 @@
+import inspect
 import os
 from typing import Any, Optional
 
 import requests
 from dotenv import load_dotenv
+
 from mods.tools.tool_schema import tool_schema
 from mods.tools.tool_types import ToolResponse
 
@@ -293,6 +295,45 @@ class AgroMarketAnalyserTool:
             return float(value)
         except (ValueError, TypeError):
             return None
+    
+    @classmethod
+    def get_tool_definitions(cls) -> list[dict]:
+        """
+        Extract all decorated methods and return their OpenAI function schemas.
+        
+        Returns:
+            List of tool definitions in OpenAI function calling format
+        """
+        definitions = []
+        
+        # Iterate through class methods
+        for name, method in inspect.getmembers(cls, predicate=inspect.isfunction):
+            # Check if method has our schema decorator
+            if hasattr(method, '__tool_schema__'):
+                schema = method.__tool_schema__
+                definitions.append({
+                    "type": "function",
+                    "function": schema
+                })
+        
+        return definitions
+    
+    @classmethod
+    def get_method_names(cls) -> list[str]:
+        """
+        Get list of all decorated method names.
+        
+        Returns:
+            List of method names that have tool_schema decorator
+        """
+        method_names = []
+        
+        for name, method in inspect.getmembers(cls, predicate=inspect.isfunction):
+            if hasattr(method, '__tool_schema__'):
+                method_names.append(name)
+        
+        return method_names
+
         
 if __name__ == "__main__":
     # Example 1: Query tomato prices in Karnataka
@@ -311,4 +352,5 @@ if __name__ == "__main__":
         print(f"  Modal Price: ₹{sample['modal_price']}/quintal")
         print(f"  Date: {sample['price_date']}")
     
+    print("\n" + "="*60 + "\n")    
     print("\n" + "="*60 + "\n")
