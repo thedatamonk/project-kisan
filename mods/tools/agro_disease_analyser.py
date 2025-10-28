@@ -1,13 +1,14 @@
 import base64
 import inspect
 import os
-from mods.tools.tool_types import ToolResponse
 from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
 from openai import OpenAI
 from PIL import Image
+
 from mods.tools.tool_schema import tool_schema
+from mods.tools.tool_types import ToolResponse
 
 load_dotenv()
 
@@ -314,4 +315,5 @@ if __name__ == "__main__":
     # summary = tool.get_quick_diagnosis(test_image, additional_context="Is this wheat leaf rust or another disease?")
     summary = tool.get_quick_diagnosis(test_image)
 
+    print (summary)
     print (summary)

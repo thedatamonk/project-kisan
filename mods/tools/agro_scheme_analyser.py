@@ -11,10 +11,10 @@ import weaviate
 import weaviate.classes as wvc
 from dotenv import load_dotenv
 from openai import OpenAI
-from mods.tools.tool_schema import tool_schema
-from mods.tools.tool_types import ToolResponse
 
 from mods.schemes import SchemeDocument, initialize_mock_schemes
+from mods.tools.tool_schema import tool_schema
+from mods.tools.tool_types import ToolResponse
 
 load_dotenv()
 
